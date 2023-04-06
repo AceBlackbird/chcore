@@ -57,21 +57,21 @@ enum flags {
 
 static int prints(char **out, const char *string, int width, int flags)
 {
-	int pc = 0, padchar = ' ';
-
+	int pc = 0, padchar = ' ';//补全字符
+ 
 	if (width > 0) {
 		int len = 0;
 		const char *ptr;
-		for (ptr = string; *ptr; ++ptr)
+		for (ptr = string; *ptr; ++ptr)//计算string长度
 			++len;
-		if (len >= width)
+		if (len >= width)	
 			width = 0;
 		else
-			width -= len;
+			width -= len;	//得到剩余需要补全的长度
 		if (flags & PAD_ZERO)
 			padchar = '0';
 	}
-	if (!(flags & PAD_RIGHT)) {
+	if (!(flags & PAD_RIGHT)) {//PAD_RIGHT是指在原数的右边补空格（即左对齐）
 		for (; width > 0; --width) {
 			simple_outputchar(out, padchar);
 			++pc;
@@ -81,14 +81,14 @@ static int prints(char **out, const char *string, int width, int flags)
 		simple_outputchar(out, *string);
 		++pc;
 	}
-	for (; width > 0; --width) {
+	for (; width > 0; --width) {//PAD_ZERO是指在原数的左边补0
 		simple_outputchar(out, padchar);
 		++pc;
 	}
-
+ 
 	return pc;
 }
-
+ 
 // this function print number `i` in the base of `base` (base > 1)
 // `sign` is the flag of print signed number or unsigned number
 // `width` and `flags` mean the length of printed number at least `width`,
@@ -104,13 +104,13 @@ static int printk_write_num(char **out, long long i, int base, int sign,
 	char *s;
 	int t, neg = 0, pc = 0;
 	unsigned long long u = i;
-
+ 
 	if (i == 0) {
 		print_buf[0] = '0';
 		print_buf[1] = '\0';
 		return prints(out, print_buf, width, flags);
 	}
-
+ 
 	if (sign && base == 10 && i < 0) {
 		neg = 1;
 		u = -i;
@@ -119,7 +119,21 @@ static int printk_write_num(char **out, long long i, int base, int sign,
 	// store the digitals in the buffer `print_buf`:
 	// 1. the last postion of this buffer must be '\0'
 	// 2. the format is only decided by `base` and `letbase` here
-
+	
+	//从后边的代码来看，是从s开始输出到'\0'
+	//s应当从print_buf的末尾开始,不断向前拓展
+	s = print_buf + PRINT_BUF_LEN - 1; 
+	*s = '\0';
+	//简单的进制转换
+	while (u > 0) {
+		char tmp = u % base;
+		if (tmp <= 9) tmp = tmp + '0';
+		else tmp = tmp - 10 + (letbase ? 'a' : 'A');
+		*(--s) = tmp;
+		u /= base;
+	}
+ 
+ 
 	if (neg) {
 		if (width && (flags & PAD_ZERO)) {
 			simple_outputchar(out, '-');
@@ -129,7 +143,8 @@ static int printk_write_num(char **out, long long i, int base, int sign,
 			*--s = '-';
 		}
 	}
-
+	//补0的情况直接输出负号，补0宽度减1,然后交给prints补0
+	//左对齐的情况直接在s里添上负号交给prints即可
 	return pc + prints(out, s, width, flags);
 }
 

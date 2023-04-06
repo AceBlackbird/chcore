@@ -30,6 +30,11 @@ int stack_backtrace()
 	printk("Stack backtrace:\n");
 
 	// Your code here.
-
+	u64* FP = (u64*)read_fp();																		read_fp();
+	FP = (u64*)*FP;//从stack_backtrace()返回到stack_test()最里层
+	while (FP != 0) {
+		printk("LR %lx FP %lx Args %d %d %d %d %d\n",*(FP+1),FP,*(FP-2),*(FP-1));
+		FP = (u64*)*FP;
+	}
 	return 0;
 }
